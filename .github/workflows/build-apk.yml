@@ -27,7 +27,7 @@ jobs:
       - name: App icon from assets/images/logo.png (if present)
         run: |
           if [ -f assets/images/logo.png ]; then
-            flutter pub add --dev flutter_launcher_icons
+            flutter pub add --dev "flutter_launcher_icons:^0.14.3"
             dart run flutter_launcher_icons -f flutter_launcher_icons.yaml
           fi
       - run: flutter build apk --release
