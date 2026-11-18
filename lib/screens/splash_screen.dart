@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../tokens.dart';
-import 'lock_screen.dart';
+import 'shell.dart';
 
 /// Splash: teal gradient, logo, name, tagline. Auto-advances to the lock-screen reminder.
 class SplashScreen extends StatefulWidget {
@@ -17,7 +17,7 @@ class _SplashState extends State<SplashScreen> {
   void initState() {
     super.initState();
     _t = Timer(const Duration(milliseconds: 2200), () {
-      if (mounted) Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const LockScreen()));
+      if (mounted) Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const Shell()));
     });
   }
 

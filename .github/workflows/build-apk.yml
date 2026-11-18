@@ -23,6 +23,27 @@ jobs:
           rm -f test/widget_test.dart
       - name: App name
         run: sed -i 's/android:label="[^"]*"/android:label="Oracare"/' android/app/src/main/AndroidManifest.xml
+      - name: Bundle Roboto from the Flutter SDK
+        run: |
+          F="$FLUTTER_ROOT/bin/cache/artifacts/material_fonts"
+          ls "$F" || true
+          if [ -f "$F/Roboto-Regular.ttf" ]; then
+            mkdir -p assets/fonts
+            cp "$F"/Roboto-Light.ttf "$F"/Roboto-Regular.ttf "$F"/Roboto-Medium.ttf "$F"/Roboto-Bold.ttf assets/fonts/
+            cat >> pubspec.yaml <<'EOF'
+  fonts:
+    - family: Roboto
+      fonts:
+        - asset: assets/fonts/Roboto-Light.ttf
+          weight: 300
+        - asset: assets/fonts/Roboto-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Roboto-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Roboto-Bold.ttf
+          weight: 700
+EOF
+          fi
       - run: flutter pub get
       - name: App icon from assets/images/logo.png (if present)
         run: |

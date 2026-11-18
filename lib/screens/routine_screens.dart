@@ -50,8 +50,8 @@ class _StepsState extends State<RoutineStepsScreen> {
       animation: appState,
       builder: (_, __) => Body([
         PageTitle(title, sub: 'Complete the routine to earn Health Points'),
-        const SizedBox(height: 16),
-        // hero card
+        const SizedBox(height: 20),
+        // hero card 365x186
         Container(
           height: 186,
           clipBehavior: Clip.antiAlias,
@@ -77,7 +77,7 @@ class _StepsState extends State<RoutineStepsScreen> {
                   Expanded(
                     child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Pill(s.label, fg: T.primary, padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6)),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
                       Text('Step ${i + 1}- ${s.name}', style: ts(18, w: kSemi, c: Colors.white, lh: 24)),
                     ]),
                   ),
@@ -86,29 +86,33 @@ class _StepsState extends State<RoutineStepsScreen> {
             ),
           ]),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
         OCard(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Tile(glyphTick),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('Current Technique', style: ts(18, w: kSemi, lh: 24)),
-                  Text(s.technique, style: ts(16, c: T.text2, lh: 24)),
-                ]),
-              ),
-            ]),
-            const SizedBox(height: 16),
-            Row(children: [
-              Expanded(child: PillButton('Replay', icon: replaySvg, onTap: () {})),
-              const SizedBox(width: 16),
-              Expanded(child: PillButton(last ? 'Finish Routine' : 'Skip Step', icon: last ? null : skipSvg, onTap: _next)),
-            ]),
+          child: Row(children: [
+            const Tile(glyphTick),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('Current Technique', style: ts(18, w: kSemi, lh: 24)),
+                const SizedBox(height: 5),
+                Text(s.technique, style: ts(16, c: T.text2, lh: 24)),
+              ]),
+            ),
           ]),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 0.5),
+          child: Row(children: [
+            Expanded(child: PillButton('Replay', icon: replaySvg, onTap: () {})),
+            const SizedBox(width: 16),
+            Expanded(child: PillButton(last ? 'Finish Routine' : 'Skip Step', icon: skipSvg, onTap: _next)),
+          ]),
+        ),
+        const SizedBox(height: 12),
         WeeklyOverview(earnedHp: 75 + (appState.dayComplete(DateTime.now()) ? AppState.checkInHp : 0)),
+        const SizedBox(height: 16),
+        const SavingsBlock(),
       ]),
     );
   }
@@ -123,8 +127,10 @@ class RoutineCompleteScreen extends StatelessWidget {
     final next = session == Session.morning ? 'this evening at 9:00 PM' : 'tomorrow morning at 7:00 AM';
     return Body([
       PageTitle('$name routine done ✓', sub: 'Check-in recorded · +${AppState.checkInHp} HP. See you $next.'),
-      const SizedBox(height: 16),
+      const SizedBox(height: 20),
       const WeeklyOverview(earnedHp: 95),
+      const SizedBox(height: 16),
+      const SavingsBlock(),
     ]);
   }
 }

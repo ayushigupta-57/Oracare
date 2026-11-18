@@ -55,7 +55,8 @@ class PillButton extends StatelessWidget {
   final VoidCallback? onTap;
   final Color bg, fg;
   final Color? border;
-  const PillButton(this.label, {super.key, this.icon, this.iconData, this.onTap, this.bg = T.btn, this.fg = Colors.white, this.border});
+  final bool left;
+  const PillButton(this.label, {super.key, this.icon, this.iconData, this.onTap, this.bg = T.btn, this.fg = Colors.white, this.border, this.left = false});
   @override
   Widget build(BuildContext context) => Material(
         color: bg,
@@ -66,7 +67,7 @@ class PillButton extends StatelessWidget {
           child: Container(
             height: 56,
             padding: const EdgeInsets.symmetric(horizontal: 24),
-            alignment: Alignment.center,
+            alignment: left ? Alignment.centerLeft : Alignment.center,
             child: Row(mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.center, children: [
               if (icon != null) ...[Ic(icon!), const SizedBox(width: 8)],
               if (iconData != null) ...[Icon(iconData, size: 24, color: fg), const SizedBox(width: 8)],
@@ -119,7 +120,7 @@ class UserButton extends StatelessWidget {
       );
 }
 
-/// Top app bar: white, 56 high, below the status bar.
+/// Top app bar: white, 56 high. Back icon (8x16) / title / user button laid out space-between (as in Figma).
 class OHeader extends StatelessWidget {
   final String title;
   final VoidCallback? onBack;
@@ -129,21 +130,29 @@ class OHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: Colors.white,
-      padding: EdgeInsets.fromLTRB(24, 0, 24, 0),
       height: 56,
-      child: Stack(alignment: Alignment.center, children: [
-        Align(
-          alignment: Alignment.centerLeft,
+      child: Stack(children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
           child: leftTitle
-              ? Text(title, style: ts(22, w: kMed, lh: 28))
-              : GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: onBack,
-                  child: const SizedBox(width: 44, height: 44, child: Center(child: Ic(backSvg, w: 8, h: 16))),
-                ),
+              ? Row(children: [
+                  Text(title, style: ts(22, w: kMed, lh: 28)),
+                  const Spacer(),
+                  const UserButton(),
+                  const SizedBox(width: 38), // Home: button sits 38px from the right edge in Figma
+                ])
+              : Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                  const SizedBox(width: 8, height: 16, child: OverflowBox(maxWidth: 11, maxHeight: 18, child: Ic(backSvg, w: 11, h: 18))),
+                  Text(title, style: ts(22, w: kMed, lh: 28)),
+                  const UserButton(),
+                ]),
         ),
-        if (!leftTitle) Text(title, style: ts(22, w: kMed, lh: 28)),
-        const Align(alignment: Alignment.centerRight, child: UserButton()),
+        if (!leftTitle)
+          Positioned(
+            left: 14,
+            top: 6,
+            child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: onBack, child: const SizedBox(width: 44, height: 44)),
+          ),
       ]),
     );
   }
@@ -153,12 +162,32 @@ class OHeader extends StatelessWidget {
 class PageTitle extends StatelessWidget {
   final String title;
   final String? sub;
-  const PageTitle(this.title, {super.key, this.sub});
+  final double? subWidth;
+  const PageTitle(this.title, {super.key, this.sub, this.subWidth});
   @override
-  Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(title, style: ts(28, w: kBold, lh: 36)),
-        if (sub != null) Text(sub!, style: ts(16, c: T.text2, lh: 24)),
-      ]);
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 0.5),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          SizedBox(width: double.infinity, child: Text(title, style: ts(28, w: kBold, lh: 36))),
+          if (sub != null) SizedBox(width: subWidth, child: Text(sub!, style: ts(16, c: T.text2, lh: 24))),
+        ]),
+      );
+}
+
+/// "+4% since last scan" chip (light teal pill).
+class TrendChip extends StatelessWidget {
+  const TrendChip({super.key});
+  @override
+  Widget build(BuildContext context) => Container(
+        height: 32,
+        padding: const EdgeInsets.only(left: 12, right: 10),
+        decoration: BoxDecoration(color: T.container, borderRadius: BorderRadius.circular(9999)),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Ic(trendSvg, w: 18, h: 18),
+          const SizedBox(width: 4),
+          Text('+4% since last scan', style: ts(14, w: kMed, c: T.primary, lh: 20)),
+        ]),
+      );
 }
 
 /// Circular score gauge (arc starts at 12 o'clock, clockwise).
@@ -198,7 +227,7 @@ class _RingPainter extends CustomPainter {
   bool shouldRepaint(_RingPainter o) => o.f != f;
 }
 
-/// Weekly Overview card, with the savings bar underneath.
+/// Weekly Overview card (exact Figma geometry).
 class WeeklyOverview extends StatelessWidget {
   final int earnedHp;
   const WeeklyOverview({super.key, required this.earnedHp});
@@ -207,49 +236,64 @@ class WeeklyOverview extends StatelessWidget {
   Color _c(int i) => i == 5 ? T.containerStrong : i == 6 ? T.borderDefault : T.primary;
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: appState,
-      builder: (_, __) => OCard(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          SizedBox(
-            height: 32,
-            child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Text('Weekly Overview', style: ts(18, w: kSemi, lh: 24)),
-              Pill('Earned $earnedHp HP'),
-            ]),
-          ),
-          const SizedBox(height: 12),
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, crossAxisAlignment: CrossAxisAlignment.end, children: [
-            for (var i = 0; i < 7; i++)
+    return OCard(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        SizedBox(
+          height: 32,
+          child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Text('Weekly Overview', style: ts(18, w: kSemi, lh: 24)),
+            Pill('Earned $earnedHp HP'),
+          ]),
+        ),
+        const SizedBox(height: 10),
+        Padding(
+          padding: const EdgeInsets.only(left: 1),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+            for (var i = 0; i < 7; i++) ...[
+              if (i > 0) const SizedBox(width: 14),
               SizedBox(
-                width: 36,
-                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                width: i == 1 ? 40 : 32,
+                height: 64 + 16 + 24,
+                child: Column(mainAxisAlignment: MainAxisAlignment.end, children: [
                   Container(
                     width: 32,
                     height: _h[i],
                     decoration: BoxDecoration(color: _c(i), borderRadius: const BorderRadius.vertical(top: Radius.circular(6))),
                   ),
                   const SizedBox(height: 16),
-                  Text(_days[i], style: ts(18, w: kBold, c: T.text2, lh: 24)),
+                  SizedBox(height: 24, child: Text(_days[i], textAlign: TextAlign.center, style: ts(18, w: kBold, c: T.text2, lh: 24))),
                 ]),
               ),
+            ],
           ]),
-          const SizedBox(height: 16),
-          Text('₹${appState.rupees} of ₹${AppState.goalRupees} saved for your next visit', style: ts(16, w: kMed, lh: 24)),
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(9999),
-            child: LayoutBuilder(
-              builder: (_, c) => Stack(children: [
-                Container(height: 8, width: c.maxWidth, color: T.containerStrong),
-                Container(height: 8, width: c.maxWidth * appState.savedFraction, color: T.primary),
-              ]),
-            ),
+        ),
+      ]),
+    );
+  }
+}
+
+/// Savings line + bar + caption (plain, no card).
+class SavingsBlock extends StatelessWidget {
+  const SavingsBlock({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: appState,
+      builder: (_, __) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('₹${appState.rupees} of ₹${AppState.goalRupees} saved for your next visit', style: ts(16, w: kMed, lh: 24)),
+        const SizedBox(height: 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(9999),
+          child: LayoutBuilder(
+            builder: (_, c) => Stack(children: [
+              Container(height: 8, width: c.maxWidth, color: T.containerStrong),
+              Container(height: 8, width: c.maxWidth * appState.savedFraction, color: T.primary),
+            ]),
           ),
-          const SizedBox(height: 8),
-          Text('${fmt(appState.hp)} HP · 10 HP = ₹1 · covers up to 50% of Dr. Sarah Malik’s ₹400 fee', style: ts(12, c: T.text2, lh: 16)),
-        ]),
-      ),
+        ),
+        const SizedBox(height: 8),
+        Text('${fmt(appState.hp)} HP · 10 HP = ₹1 · covers up to 50% of Dr. Sarah Malik’s ₹400 fee', style: ts(12, c: T.text2, lh: 16)),
+      ]),
     );
   }
 }
@@ -343,7 +387,7 @@ class Body extends StatelessWidget {
   const Body(this.children, {super.key});
   @override
   Widget build(BuildContext context) => SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 4, 24, 152),
+        padding: const EdgeInsets.fromLTRB(23.5, 24, 23.5, 152),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children),
       );
 }
