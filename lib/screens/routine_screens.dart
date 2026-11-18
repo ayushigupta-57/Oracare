@@ -1,5 +1,5 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
+import '../icons.dart';
 import '../state.dart';
 import '../tokens.dart';
 import '../widgets.dart';
@@ -21,202 +21,110 @@ const kSteps = <RoutineStep>[
   RoutineStep('Mouthwash', 60, 'Swish for the full time, then spit. Do not rinse.'),
 ];
 
-/// Set > 1 to speed the timers up while testing (e.g. 10 = 10x faster).
-const double kTimerSpeed = 1;
-
 class RoutineStepsScreen extends StatefulWidget {
   final Session session;
-  const RoutineStepsScreen({super.key, required this.session});
+  final VoidCallback onDone;
+  const RoutineStepsScreen({super.key, required this.session, required this.onDone});
   @override
   State<RoutineStepsScreen> createState() => _StepsState();
 }
 
 class _StepsState extends State<RoutineStepsScreen> {
   int i = 0;
-  late double left = kSteps[0].seconds.toDouble();
-  Timer? _t;
-  bool paused = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _t = Timer.periodic(const Duration(milliseconds: 250), (_) {
-      if (paused) return;
-      setState(() => left = (left - 0.25 * kTimerSpeed).clamp(0, 9999));
-    });
-  }
-
-  @override
-  void dispose() {
-    _t?.cancel();
-    super.dispose();
-  }
-
-  void _restart() {
-    setState(() => left = kSteps[i].seconds.toDouble());
-    toast(context, 'RoutineStep restarted');
-  }
 
   void _next() {
-    if (i == kSteps.length - 1) {
-      appState.completeRoutine(widget.session); // only here: full routine finished
-      Navigator.of(context).pushReplacement(MaterialPageRoute(
-          builder: (_) => RoutineCompleteScreen(session: widget.session, justRecorded: true)));
-      return;
+    if (i < kSteps.length - 1) {
+      setState(() => i++);
+    } else {
+      appState.completeRoutine(widget.session);
+      widget.onDone();
     }
-    setState(() {
-      i++;
-      left = kSteps[i].seconds.toDouble();
-    });
-  }
-
-  String _fmt(double s) {
-    final v = s.ceil();
-    return '${(v ~/ 60).toString().padLeft(2, '0')}:${(v % 60).toString().padLeft(2, '0')}';
   }
 
   @override
   Widget build(BuildContext context) {
-    final step = kSteps[i];
-    final morning = widget.session == Session.morning;
-    final frac = 1 - left / step.seconds;
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: T.bg,
-        surfaceTintColor: Colors.transparent,
-        scrolledUnderElevation: 0,
-        title: const Text('Routine'),
-        centerTitle: true,
-        titleTextStyle: ts(22, w: FontWeight.w500),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(T.s16, T.s8, T.s16, T.s24),
-        children: [
-          Text('${morning ? 'Morning' : 'Evening'} Routine', style: ts(28, w: FontWeight.w500)),
-          const SizedBox(height: T.s4),
-          Text('Complete the routine to earn Health Points', style: ts(16, c: T.text2)),
-          const SizedBox(height: T.s16),
-          Row(children: [
-            for (var k = 0; k < kSteps.length; k++)
-              Expanded(
-                child: Container(
-                  height: 6,
-                  margin: EdgeInsets.only(right: k == kSteps.length - 1 ? 0 : 4),
-                  decoration: BoxDecoration(
-                    color: k <= i ? T.btn : T.border,
-                    borderRadius: BorderRadius.circular(3),
+    final s = kSteps[i];
+    final last = i == kSteps.length - 1;
+    final title = widget.session == Session.morning ? 'Morning Routine' : 'Evening Routine';
+    return AnimatedBuilder(
+      animation: appState,
+      builder: (_, __) => Body([
+        PageTitle(title, sub: 'Complete the routine to earn Health Points'),
+        const SizedBox(height: 16),
+        // hero card
+        Container(
+          height: 186,
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: T.text,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: T.border, width: 0.8),
+          ),
+          child: Stack(fit: StackFit.expand, children: [
+            Opacity(
+              opacity: 0.75,
+              child: Image.asset('assets/images/hero.png', fit: BoxFit.cover, errorBuilder: (_, __, ___) => const DecoratedBox(
+                decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF2F6F68), Color(0xFF1C2F3F)])),
+              )),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Align(
+                alignment: Alignment.bottomLeft,
+                child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                  Ic(glyphPlay('#006B60', '#E0F2F1'), w: 48, h: 48),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Pill(s.label, fg: T.primary, padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6)),
+                      const SizedBox(height: 8),
+                      Text('Step ${i + 1}- ${s.name}', style: ts(18, w: kSemi, c: Colors.white, lh: 24)),
+                    ]),
                   ),
-                ),
-              ),
-          ]),
-          const SizedBox(height: T.s8),
-          Text('RoutineStep ${i + 1} of ${kSteps.length} · ${step.name}', style: ts(14, w: FontWeight.w500, c: T.onContainer)),
-          const SizedBox(height: T.s16),
-          OCard(
-            color: T.container,
-            child: Column(children: [
-              SizedBox(
-                width: 168,
-                height: 168,
-                child: Stack(alignment: Alignment.center, children: [
-                  SizedBox.expand(
-                    child: CircularProgressIndicator(
-                      value: frac.clamp(0.0, 1.0),
-                      strokeWidth: 10,
-                      backgroundColor: Colors.white,
-                      color: T.primary,
-                    ),
-                  ),
-                  Text(_fmt(left), style: ts(36, w: FontWeight.w500, c: T.onContainer)),
                 ]),
               ),
-              const SizedBox(height: T.s16),
-              Text(step.name, style: ts(22, w: FontWeight.w500)),
-            ]),
-          ),
-          const SizedBox(height: T.s16),
-          OCard(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Current Technique', style: ts(16, w: FontWeight.w500)),
-              const SizedBox(height: T.s4),
-              Text(step.technique, style: ts(14, c: T.text2)),
-            ]),
-          ),
-          const SizedBox(height: T.s16),
-          Row(children: [
-            Expanded(child: SecondaryButton('Restart', icon: Icons.replay, onPressed: _restart)),
-            const SizedBox(width: T.s12),
-            Expanded(
-              child: SecondaryButton(paused ? 'Resume' : 'Pause',
-                  icon: paused ? Icons.play_arrow : Icons.pause, onPressed: () => setState(() => paused = !paused)),
             ),
           ]),
-          const SizedBox(height: T.s12),
-          PrimaryButton(i == kSteps.length - 1 ? 'Finish routine' : 'Next step',
-              icon: i == kSteps.length - 1 ? Icons.check : Icons.arrow_forward, onPressed: _next),
-          const SizedBox(height: T.s24),
-          const WeeklyOverview(),
-          const SizedBox(height: T.s16),
-          const SavingsCard(),
-        ],
-      ),
+        ),
+        const SizedBox(height: 16),
+        OCard(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Tile(glyphTick),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('Current Technique', style: ts(18, w: kSemi, lh: 24)),
+                  Text(s.technique, style: ts(16, c: T.text2, lh: 24)),
+                ]),
+              ),
+            ]),
+            const SizedBox(height: 16),
+            Row(children: [
+              Expanded(child: PillButton('Replay', icon: replaySvg, onTap: () {})),
+              const SizedBox(width: 16),
+              Expanded(child: PillButton(last ? 'Finish Routine' : 'Skip Step', icon: last ? null : skipSvg, onTap: _next)),
+            ]),
+          ]),
+        ),
+        const SizedBox(height: 16),
+        WeeklyOverview(earnedHp: 75 + (appState.dayComplete(DateTime.now()) ? AppState.checkInHp : 0)),
+      ]),
     );
   }
 }
 
-class RoutineCompleteScreen extends StatefulWidget {
+class RoutineCompleteScreen extends StatelessWidget {
   final Session session;
-  final bool justRecorded;
-  const RoutineCompleteScreen({super.key, required this.session, this.justRecorded = false});
-  @override
-  State<RoutineCompleteScreen> createState() => _CompleteState();
-}
-
-class _CompleteState extends State<RoutineCompleteScreen> {
-  @override
-  void initState() {
-    super.initState();
-    if (widget.justRecorded) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          final s = widget.session == Session.morning ? 'Morning' : 'Evening';
-          toast(context, '$s check-in recorded · +${AppState.checkInHp} Health Points');
-        }
-      });
-    }
-  }
-
+  const RoutineCompleteScreen({super.key, required this.session});
   @override
   Widget build(BuildContext context) {
-    final morning = widget.session == Session.morning;
-    return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(T.s16),
-          children: [
-            const SizedBox(height: T.s32),
-            const Center(
-              child: CircleAvatar(radius: 40, backgroundColor: T.btn, child: Icon(Icons.check, size: 44, color: Colors.white)),
-            ),
-            const SizedBox(height: T.s24),
-            Text('${morning ? 'Morning' : 'Evening'} routine done ✓',
-                textAlign: TextAlign.center, style: ts(28, w: FontWeight.w500)),
-            const SizedBox(height: T.s8),
-            Text(
-                'Check-in recorded · +${AppState.checkInHp} HP. See you this ${morning ? 'evening at 9:00 PM' : 'morning at 7:00 AM'}.',
-                textAlign: TextAlign.center,
-                style: ts(16, c: T.text2)),
-            const SizedBox(height: T.s24),
-            const WeeklyOverview(),
-            const SizedBox(height: T.s16),
-            const SavingsCard(),
-            const SizedBox(height: T.s24),
-            PrimaryButton('Back to Home', onPressed: () {
-              Navigator.of(context).popUntil((r) => r.isFirst);
-            }),
-          ],
-        ),
-      ),
-    );
+    final name = session == Session.morning ? 'Morning' : 'Evening';
+    final next = session == Session.morning ? 'this evening at 9:00 PM' : 'tomorrow morning at 7:00 AM';
+    return Body([
+      PageTitle('$name routine done ✓', sub: 'Check-in recorded · +${AppState.checkInHp} HP. See you $next.'),
+      const SizedBox(height: 16),
+      const WeeklyOverview(earnedHp: 95),
+    ]);
   }
 }
