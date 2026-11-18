@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'screens/lock_screen.dart';
+import 'screens/splash_screen.dart';
 import 'state.dart';
 import 'tokens.dart';
 
@@ -21,6 +21,6 @@ class OracareApp extends StatelessWidget {
         title: 'Oracare',
         debugShowCheckedModeBanner: false,
         theme: buildTheme(),
-        home: const LockScreen(),
+        home: const SplashScreen(),
       );
 }

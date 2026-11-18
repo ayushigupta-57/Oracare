@@ -21,7 +21,15 @@ jobs:
         run: |
           flutter create --org com.oracare --project-name oracare_daily --platforms android .
           rm -f test/widget_test.dart
+      - name: App name
+        run: sed -i 's/android:label="[^"]*"/android:label="Oracare"/' android/app/src/main/AndroidManifest.xml
       - run: flutter pub get
+      - name: App icon from assets/images/logo.png (if present)
+        run: |
+          if [ -f assets/images/logo.png ]; then
+            flutter pub add --dev flutter_launcher_icons
+            dart run flutter_launcher_icons -f flutter_launcher_icons.yaml
+          fi
       - run: flutter build apk --release
       - uses: actions/upload-artifact@v4
         with:
