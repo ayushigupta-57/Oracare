@@ -8,7 +8,7 @@ const _mo = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'Au
 
 class LockScreen extends StatelessWidget {
   const LockScreen({super.key});
-  void _open(BuildContext c, Page p) => Navigator.of(c).pushReplacement(MaterialPageRoute(builder: (_) => Shell(start: p)));
+  void _open(BuildContext c, Pg p) => Navigator.of(c).pushReplacement(MaterialPageRoute(builder: (_) => Shell(start: p)));
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +21,7 @@ class LockScreen extends StatelessWidget {
         body: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onVerticalDragEnd: (d) {
-            if ((d.primaryVelocity ?? 0) < -200) _open(context, Page.home);
+            if ((d.primaryVelocity ?? 0) < -200) _open(context, Pg.home);
           },
           child: SafeArea(
             child: Column(children: [
@@ -43,7 +43,7 @@ class LockScreen extends StatelessWidget {
                   Row(children: [
                     GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTap: () => _open(context, Page.overview),
+                      onTap: () => _open(context, Pg.overview),
                       child: Text('I brushed ✓', style: ts(16, w: kMed, c: T.btn, lh: 24)),
                     ),
                     const SizedBox(width: 24),
@@ -54,7 +54,7 @@ class LockScreen extends StatelessWidget {
               const Spacer(),
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: () => _open(context, Page.home),
+                onTap: () => _open(context, Pg.home),
                 child: Padding(
                   padding: const EdgeInsets.only(bottom: 24),
                   child: Text('Swipe up to open', style: ts(14, c: T.containerStrong, lh: 20)),
